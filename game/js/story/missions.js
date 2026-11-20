@@ -18,7 +18,7 @@ function places(game) {
   const L = game.world.landmarks;
   const g = L.garage.entry, d = L.dex.entry, b = L.bank.entry, c = L.cafe.entry, f = L.freight.entry;
   return {
-    garageStart: [g.x - 4, g.z], garageDrop: [g.x + 3, g.z - 5], lin: [g.x + 4, g.z + 3], kaiAtGarage: [g.x + 1.5, g.z + 0.5],
+    garageStart: [g.x - 6, g.z], garageDrop: [g.x + 3, g.z - 5], lin: [g.x + 1.1, g.z + 1.6], kaiAtGarage: [g.x - 0.9, g.z + 1.6],
     dexStart: [d.x, d.z - 3], dex: [d.x + 2, d.z + 2], bankStop: [b.x - 2.5, b.z], bankDoor: [b.x + 3, b.z],
     cafe: [c.x, c.z], freight: [f.x, f.z], vesper: [585, 272.6], rendy: [585, 278.5],
     towerExit: [495, 362.6], pierStart: [925, (EAST_PIER.z0 + EAST_PIER.z1) / 2], pierEnd: [EAST_PIER.x1 - 10, (EAST_PIER.z0 + EAST_PIER.z1) / 2],
@@ -128,7 +128,7 @@ const SCRIPTS = {
     yield* garageArrive(m);
     const lin = m.actor('lin', P.lin[0], P.lin[1], Math.PI);
     yield m.cutscene([
-      { who: 'lin', text: 'Look at you. Taller. Thinner. Did they feed you on that boat?', actor: lin, shot: Shots.two(p, lin, 4.5, 1) },
+      { who: 'lin', text: 'Look at you. Taller. Thinner. Did they feed you on that boat?', actor: lin, shot: Shots.two(p, lin, 4.5, -1) },
       { who: 'kai', text: 'Instant noodles and regret, mostly.', shot: Shots.ots(p, lin, 3.2, 1) },
       { who: 'lin', text: "The Black Orchid took half the shops on this street. Viktor's people collect every Friday.", actor: lin, shot: Shots.ots(lin, p, 5, -1) },
       { who: 'lin', text: "I won't pay forever. Now that you're home... maybe I don't have to.", actor: lin, shot: Shots.two(p, lin, 4.5, -1, 3.4) },
@@ -143,7 +143,7 @@ const SCRIPTS = {
     const g = m.g, P = m.P, p = g.player;
     const lin = m.actor('lin', P.lin[0], P.lin[1], Math.PI);
     yield m.cutscene([
-      { who: 'lin', text: "Viktor's nephew Rendy parks a yellow Vesper GT downtown every evening. Like he owns the sun.", actor: lin, shot: Shots.two(p, lin, 5, 1) },
+      { who: 'lin', text: "Viktor's nephew Rendy parks a yellow Vesper GT downtown every evening. Like he owns the sun.", actor: lin, shot: Shots.two(p, lin, 5, -1) },
       { who: 'kai', text: 'Let me guess. You want it.', shot: Shots.ots(p, lin, 3, 1) },
       { who: 'lin', text: 'I want Viktor to know the Santosos are back. Bring it here in one piece. Mostly one piece.', actor: lin, shot: Shots.ots(lin, p, 5, -1) },
     ], { setup: () => stage(m, lin), music: 'cutLin' });
@@ -171,7 +171,7 @@ const SCRIPTS = {
     if (vesper.health < 250) return m.sys.fail('The Vesper is wrecked. Lin wanted it at 25% or better.');
     yield* garageArrive(m);
     yield m.cutscene([
-      { who: 'lin', text: 'Not a scratch. Well. A few scratches. I can sell scratches.', actor: lin, shot: Shots.two(p, lin, 4.5, 1) },
+      { who: 'lin', text: 'Not a scratch. Well. A few scratches. I can sell scratches.', actor: lin, shot: Shots.two(p, lin, 4.5, -1) },
       { who: 'lin', text: "Your father's old Kobra 9 is waiting at the safehouse. Use it wisely.", actor: lin, shot: Shots.ots(lin, p, 4.5, -1) },
     ], { setup: () => stage(m, lin), music: 'cutLin' });
     const sh = g.world.landmarks.safehouse.entry;
@@ -216,7 +216,7 @@ const SCRIPTS = {
     yield m.until(() => mk.inside);
     yield* garageArrive(m);
     yield m.cutscene([
-      { who: 'lin', text: 'Every rupiah. The owner will cry. Then she will make you free coffee forever.', actor: lin, shot: Shots.two(p, lin, 5, 1) },
+      { who: 'lin', text: 'Every rupiah. The owner will cry. Then she will make you free coffee forever.', actor: lin, shot: Shots.two(p, lin, 5, -1) },
       { who: 'kai', text: 'Viktor will notice.', shot: Shots.ots(p, lin, 2.5, 1) },
       { who: 'lin', text: 'Good. Let him.', actor: lin, shot: Shots.ots(lin, p, 3, -1) },
     ], { setup: () => stage(m, lin), music: 'cutLin' });
@@ -228,7 +228,7 @@ const SCRIPTS = {
     const dex = m.actor('dex', P.dex[0], P.dex[1], -Math.PI / 2);
     dex.invulnerable = false; dex.health = dex.maxHealth = 150;
     yield m.cutscene([
-      { who: 'dex', text: 'Kai Santoso! Five years and you still dress like a parking attendant.', actor: dex, shot: Shots.two(p, dex, 5, 1) },
+      { who: 'dex', text: 'Kai Santoso! Five years and you still dress like a parking attendant.', actor: dex, shot: Shots.two(p, dex, 5, -1) },
       { who: 'kai', text: 'Good to see you too, Dex.', shot: Shots.ots(p, dex, 2.6, 1) },
       { who: 'dex', text: "Bank Samudra keeps Viktor's ledgers in the vault. Prove the Orchid launders through it and the whole coast flips.", actor: dex, shot: Shots.ots(dex, p, 6, -1) },
       { who: 'dex', text: 'I crack, you drive. Get us a car.', actor: dex, shot: Shots.orbit(dex, 4.5, 1.6, -0.6, 0.4, 3.5, { target: [dex.x, dex.y + 1.5, dex.z] }) },
@@ -294,7 +294,7 @@ const SCRIPTS = {
     const lin = m.actor('lin', P.lin[0], P.lin[1], Math.PI);
     g.clock = 22.2;
     yield m.cutscene([
-      { who: 'lin', text: 'Night shift. Orchid Freight is moving guns tonight. A Bison truck full of them.', actor: lin, shot: Shots.two(p, lin, 5, 1) },
+      { who: 'lin', text: 'Night shift. Orchid Freight is moving guns tonight. A Bison truck full of them.', actor: lin, shot: Shots.two(p, lin, 5, -1) },
       { who: 'lin', text: 'I left something in the workshop for you.', actor: lin, shot: Shots.ots(lin, p, 3, -1) },
       { who: 'kai', text: 'A Wasp? Auntie...', shot: Shots.ots(p, lin, 2.5, 1) },
       { who: 'lin', text: 'Your uncle had hobbies. Burn that truck, then get out of the docks.', actor: lin, shot: Shots.orbit(lin, 5, 1.6, -0.5, 0.5, 4.5, { target: [lin.x, lin.y + 1.5, lin.z] }) },
@@ -302,7 +302,7 @@ const SCRIPTS = {
     g.weapons.give('smg', 150); g.weapons.select('smg');
     m.obj('Go to Orchid Freight', P.freight);
     const fb = m.blip(() => P.freight, 'crate', '#d77bff');
-    const yard = g.world.landmarks.freight.yard;
+    const Y = g.world.landmarks.freight.yard, yard = [Y.x, Y.z];
     const truck = m.vehicle('bison', yard[0] + 17.5, yard[1] + 19, Math.PI / 2, [0.35, 0.12, 0.45]);
     truck.damageMult = 4;
     const guardSpots = [[yard[0] - 4, yard[1] - 15], [yard[0] - 4, yard[1] + 15], [yard[0] + 9, yard[1] + 21], [yard[0] + 33, yard[1] + 19], [yard[0] - 10, yard[1] + 5], [yard[0] + 48, yard[1] + 21]];
@@ -328,9 +328,9 @@ const SCRIPTS = {
   *orchidfalls(m) {
     const g = m.g, P = m.P, p = g.player;
     const lin = m.actor('lin', P.lin[0], P.lin[1], Math.PI);
-    const dex = m.actor('dex', P.lin[0] - 2.2, P.lin[1] + 0.6, Math.PI);
+    const dex = m.actor('dex', P.lin[0] + 1.6, P.lin[1] + 0.9, -Math.PI / 2);
     yield m.cutscene([
-      { who: 'dex', text: "The ledgers went public an hour ago. Every newsroom on the coast has them. Viktor is running.", actor: dex, shot: Shots.two(p, dex, 5.5, 1) },
+      { who: 'dex', text: "The ledgers went public an hour ago. Every newsroom on the coast has them. Viktor is running.", actor: dex, shot: Shots.two(p, dex, 5.5, -1) },
       { who: 'lin', text: 'He has a boat waiting at the east pier. Once he is on the water, he is gone.', actor: lin, shot: Shots.ots(lin, p, 4.5, -1) },
       { who: 'kai', text: "Then he doesn't reach the water.", shot: Shots.ots(p, lin, 3, 1) },
       { who: 'dex', text: "Take the Vesper. Rendy won't be needing it.", actor: dex, shot: Shots.orbit(dex, 5, 1.6, 0.4, -0.4, 3.5, { target: [dex.x, dex.y + 1.5, dex.z] }) },

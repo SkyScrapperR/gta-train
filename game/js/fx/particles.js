@@ -35,9 +35,9 @@ export class Particles {
     this.decals.push({ x, y, z, nx, ny, nz, size, r, g, b, a, life, age: 0, stretch, rot });
   }
   // ---------------------------------------------------------------- emitters
-  smoke(x, y, z, shade = 0.5, size = 1) {
+  smoke(x, y, z, shade = 0.5, size = 1, glow = 0) {
     const r = this.rnd;
-    this.spawn({ x: x + (r() - 0.5) * 0.4, y, z: z + (r() - 0.5) * 0.4, vx: (r() - 0.5) * 0.6, vy: 1.2 + r(), vz: (r() - 0.5) * 0.6, life: 2.4 + r() * 1.5, size: 0.4 * size, grow: 1.1 * size, r: shade, g: shade, b: shade * 1.02, a: 0.5, type: 0, additive: false, drag: 0.4, rot: r() * 6, spin: (r() - 0.5), emis: 0 });
+    this.spawn({ x: x + (r() - 0.5) * 0.4, y, z: z + (r() - 0.5) * 0.4, vx: (r() - 0.5) * 0.6, vy: 1.2 + r(), vz: (r() - 0.5) * 0.6, life: 2.4 + r() * 1.5, size: 0.4 * size, grow: 1.1 * size, r: shade, g: shade, b: shade * 1.02, a: 0.5, type: 0, additive: false, drag: 0.4, rot: r() * 6, spin: (r() - 0.5), emis: glow, fireLit: glow > 0 ? 1 : 0 });
   }
   fire(x, y, z, size = 1) {
     const r = this.rnd;
@@ -70,13 +70,14 @@ export class Particles {
   }
   explosion(x, y, z, scale = 1) {
     const r = this.rnd;
-    for (let i = 0; i < 26 * scale; i++) {
-      const a = r() * Math.PI * 2, e = r() * 0.9 + 0.1, sp = 3 + r() * 9;
-      this.spawn({ x, y, z, vx: Math.cos(a) * sp * e, vy: r() * 7, vz: Math.sin(a) * sp * e, life: 0.6 + r() * 0.5, size: 0.8 * scale, grow: 2.0 * scale, r: 1, g: 0.45 + r() * 0.25, b: 0.1, a: 0.55, type: 2, additive: true, drag: 3, emis: 0.8 });
+    for (let i = 0; i < 40 * scale; i++) {
+      const a = r() * Math.PI * 2, e = r() * 0.9 + 0.1, sp = 2 + r() * 7;
+      this.spawn({ x, y: y + r(), z, vx: Math.cos(a) * sp * e, vy: 1 + r() * 6, vz: Math.sin(a) * sp * e, life: 0.7 + r() * 0.7, size: 1.0 * scale, grow: 2.2 * scale, r: 1, g: 0.32 + r() * 0.3, b: 0.06, a: 0.9, type: 0, additive: false, drag: 2.5, emis: 2.2, rot: r() * 6, spin: (r() - 0.5) * 2 });
     }
+    for (let i = 0; i < 14 * scale; i++) this.spawn({ x, y: y + r() * 2, z, vx: (r() - 0.5) * 4, vy: 2 + r() * 4, vz: (r() - 0.5) * 4, life: 0.5 + r() * 0.4, size: 1.4 * scale, grow: 1.5 * scale, r: 1, g: 0.55, b: 0.2, a: 0.5, type: 2, additive: true, drag: 2, emis: 1.2 });
     for (let i = 0; i < 22 * scale; i++) {
       const a = r() * Math.PI * 2, sp = 1 + r() * 4;
-      this.spawn({ x: x + Math.cos(a), y: y + r() * 2, z: z + Math.sin(a), vx: Math.cos(a) * sp, vy: 2 + r() * 3, vz: Math.sin(a) * sp, life: 3.5 + r() * 3, size: 1.2 * scale, grow: 1.6 * scale, r: 0.12, g: 0.11, b: 0.1, a: 0.75, type: 0, additive: false, drag: 1.2, rot: r() * 6, spin: (r() - 0.5) * 0.5, emis: 0, fireLit: 1 });
+      this.spawn({ x: x + Math.cos(a), y: y + r() * 2, z: z + Math.sin(a), vx: Math.cos(a) * sp, vy: 2 + r() * 3, vz: Math.sin(a) * sp, life: 3.5 + r() * 3, size: 1.2 * scale, grow: 1.6 * scale, r: 0.16, g: 0.15, b: 0.14, a: 0.75, type: 0, additive: false, drag: 1.2, rot: r() * 6, spin: (r() - 0.5) * 0.5, emis: 0.12, fireLit: 1 });
     }
     this.sparks(x, y + 0.5, z, 0, 0, 30);
     this.spawn({ x, y: y + 0.5, z, life: 0.2, size: 2 * scale, grow: 10 * scale, r: 1, g: 0.8, b: 0.5, a: 0.5, type: 2, additive: true, emis: 1.5, still: true });

@@ -129,7 +129,8 @@ export class CollisionWorld {
   inBounds(x, z) {
     if (x >= LAND.x0 && x <= LAND.x1 && z >= LAND.z0 && z <= LAND.z1) return true;
     if (x >= BEACH.x0 && x <= BEACH.x1 && z >= BEACH.z0 - 1 && z <= BEACH.z0 + 48) return true;
-    for (const p of [FERRY_PIER, EAST_PIER]) if (x >= p.x0 && x <= p.x1 && z >= p.z0 - 2 && z <= p.z1) return true;
+    for (const p of [FERRY_PIER, EAST_PIER]) if (x >= p.x0 && x <= p.x1 && z >= p.z0 - 10 && z <= p.z1) return true;
+    if (x >= EAST_PIER.x0 - 12 && x <= EAST_PIER.x0 + 2 && z >= EAST_PIER.z0 && z <= EAST_PIER.z1) return true;
     return false;
   }
 }

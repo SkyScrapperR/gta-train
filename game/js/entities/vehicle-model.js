@@ -59,10 +59,10 @@ function addWheelArches(b, s) {
   for (const z of [wheelbase / 2, -wheelbase / 2]) for (const side of [-1, 1]) {
     const x = side * (W / 2 + 0.004);
     const R = wheelR + 0.08;
-    for (let k = 0; k <= 6; k++) {
-      const a = (k / 6) * Math.PI;
+    for (let k = 0; k <= 12; k++) {
+      const a = (k / 12) * Math.PI;
       const cz = z + Math.cos(a) * R, cy = ride - 0.05 + wheelR * 0.55 + Math.sin(a) * R * 0.9;
-      b.box(x, cy - 0.04, cz, 0.03, 0.09, 0.16);
+      b.pushTRS(x, cy, cz, 0, -(a - Math.PI / 2), 0); b.box(0, -0.045, 0, 0.03, 0.09, 0.15); b.pop();
     }
     // dark wheel well
     b.box(side * (W / 2 - 0.25), ride - 0.05, z, 0.45, wheelR * 1.2, wheelR * 2.1);

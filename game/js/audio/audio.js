@@ -1,6 +1,8 @@
 // Web Audio engine: everything is synthesized. Positional one-shot effects (PannerNode), continuous
 // engine/screech/siren/rotor voices, city ambience (traffic hum, birds or crickets, waves, rain),
 // separate music / SFX / radio buses with ducking. Starts on the first user gesture.
+import { MusicDirector } from './music/director.js';
+import { Radio } from './radio.js';
 
 export class AudioEngine {
   constructor(game) {
@@ -19,9 +21,9 @@ export class AudioEngine {
     this.master.threshold.value = -14; this.master.ratio.value = 4;
     this.master.connect(ctx.destination);
     this.sfx = ctx.createGain(); this.sfx.connect(this.master);
-    this.music = ctx.createGain(); this.music.connect(this.master);
+    this.musicBus = ctx.createGain(); this.musicBus.connect(this.master);
     this.radioBus = ctx.createGain(); this.radioBus.connect(this.master);
-    this.musicDuck = ctx.createGain(); this.musicDuck.connect(this.music);
+    this.musicDuck = ctx.createGain(); this.musicDuck.connect(this.musicBus);
     this.radioDuck = ctx.createGain(); this.radioDuck.connect(this.radioBus);
     // shared noise buffer
     const len = ctx.sampleRate * 2;
@@ -30,13 +32,16 @@ export class AudioEngine {
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     this.applyVolumes();
     this.startContinuous();
-    this.game.onAudioReady?.();
+    this.music = new MusicDirector(this);
+    this.radio = new Radio(this);
+    if (this.game.state === 'title') this.music.play('title');
+    if (this.game.player?.state === 'driving') this.radio.enterCar();
   }
   setVolumes(s) { this.vol = { music: s.musicVol, sfx: s.sfxVol, radio: s.radioVol }; this.applyVolumes(); }
   applyVolumes() {
     if (!this.ctx) return;
     this.sfx.gain.value = this.vol.sfx;
-    this.music.gain.value = this.vol.music * 0.8;
+    this.musicBus.gain.value = this.vol.music * 0.8;
     this.radioBus.gain.value = this.vol.radio * 0.8;
   }
   // Music/radio dip under dialogue and explosions.
@@ -127,6 +132,7 @@ export class AudioEngine {
   update(dt) {
     if (!this.ctx || this.ctx.state !== 'running') return;
     const g = this.game, ctx = this.ctx, t = ctx.currentTime, cam = g.camera;
+    this.music?.update(g);
     const L = ctx.listener;
     if (L.positionX) {
       L.positionX.value = cam.pos[0]; L.positionY.value = cam.pos[1]; L.positionZ.value = cam.pos[2];

@@ -55,7 +55,7 @@ export class Combat {
       if (h) best = { t: h.t, kind: 'vehicle', obj: v };
     }
     const heli = g.helicopter;
-    if (heli && heli.active && !heli.crashed) {
+    if (heli && heli.active && !heli.crashed && !(ignore && ignore.isHeli)) {
       const fx = heli.x - o[0], fy = heli.y + 1.2 - o[1], fz = heli.z - o[2];
       const t = fx * d[0] + fy * d[1] + fz * d[2];
       if (t > 0 && t < best.t) { const px = o[0] + d[0] * t - heli.x, py = o[1] + d[1] * t - heli.y - 1.2, pz = o[2] + d[2] * t - heli.z; if (px * px + py * py + pz * pz < 2.4 * 2.4) best = { t, kind: 'heli', obj: heli }; }
@@ -182,7 +182,7 @@ export class Combat {
   explosion(x, y, z, radius, damage, source, skipVehicle = null) {
     const g = this.game;
     g.particles.explosion(x, y, z, radius / 8);
-    g.lightsFx.flash(x, y + 2, z, [1, 0.6, 0.25], 9, radius * 4, 0.6);
+    g.lightsFx.flash(x, y + 2, z, [1, 0.5, 0.18], 5, radius * 4, 0.7);
     g.audio?.play('explosion', [x, y, z], 1);
     const pd = Math.hypot(g.player.x - x, g.player.z - z);
     g.rig.addShake(clamp(1.4 - pd / 60, 0, 1.2));

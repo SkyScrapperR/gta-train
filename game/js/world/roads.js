@@ -70,6 +70,7 @@ export class RoadGraph {
 
   // Route as world-space points (lane centers through intersections) from a position to a target position.
   routePoints(x, z, tx, tz) {
+    if (!Number.isFinite(x + z + tx + tz)) return [[x, z]];
     const a = this.nearestNode(x, z), b = this.nearestNode(tx, tz);
     const ids = this.findPath(a.id, b.id);
     const pts = [[x, z]];

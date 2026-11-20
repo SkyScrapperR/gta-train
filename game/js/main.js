@@ -16,6 +16,7 @@ import { VehicleSystem } from './entities/vehicle.js';
 import { PedestrianSystem } from './entities/pedestrian.js';
 import { TrafficSystem } from './ai/traffic.js';
 import { WantedSystem, PoliceSystem } from './ai/police.js';
+import { Helicopter } from './ai/helicopter.js';
 import { Inventory, WEAPONS } from './combat/weapons.js';
 import { Combat } from './combat/combat.js';
 import { Pickups } from './combat/pickups.js';
@@ -34,10 +35,12 @@ import { Markers } from './story/markers.js';
 const params = new URLSearchParams(location.search);
 const DEFAULT_SETTINGS = { quality: 'medium', musicVol: 0.7, sfxVol: 0.8, radioVol: 0.7, sensitivity: 1, invertY: false, showFps: false };
 
-// Title flythrough: low between the downtown towers at dusk.
-const TITLE_PATH = [
-  [[402, 9, 262], [470, 30, 340]], [[455, 14, 300], [520, 40, 370]], [[505, 22, 315], [540, 60, 420]],
-  [[540, 12, 260], [500, 45, 380]], [[600, 30, 230], [500, 80, 360]], [[455, 8, 240], [495, 70, 360]],
+// Title flythrough: slow cinematic shots between the towers at dusk, cutting between views of Orchid Tower.
+const TITLE_SHOTS = [
+  { p0: [447, 5, 650], p1: [449, 6.5, 612], l0: [486, 70, 392], l1: [488, 78, 392] },
+  { p0: [610, 3.5, 458], p1: [590, 4.5, 456], l0: [497, 62, 405], l1: [497, 70, 405] },
+  { p0: [372, 26, 262], p1: [392, 34, 282], l0: [497, 95, 405], l1: [497, 105, 405] },
+  { p0: [536, 2.6, 520], p1: [537, 3.2, 492], l0: [520, 30, 380], l1: [512, 45, 370] },
 ];
 
 class Game {
@@ -87,6 +90,7 @@ class Game {
     this.peds = new PedestrianSystem(this);
     this.wanted = new WantedSystem(this);
     this.police = new PoliceSystem(this);
+    this.helicopter = new Helicopter(this);
     this.particles = new Particles(this);
     this.lightsFx = new FxLights();
     this.combat = new Combat(this);
@@ -106,6 +110,7 @@ class Game {
     this.last = performance.now();
     this.enterTitle();
     if (params.has('play')) this.newGame(true);
+    if (params.has('shot')) import('./screenshot-scenes.js').then((m) => m.setupShot(this, Number(params.get('shot'))));
     requestAnimationFrame((t) => this.frame(t));
   }
 
@@ -370,6 +375,7 @@ class Game {
   }
 
   update(dt, realDt) {
+    this.simTime = (this.simTime || 0) + dt;
     this.mouseFrame = this.input.consumeMouse();
     this.env = computeEnvironment(this.clock, this.rain);
     this.hud.update(realDt);
@@ -431,11 +437,11 @@ class Game {
   }
   updateTitle(dt) {
     this.titleT += dt;
-    const seg = 9, n = TITLE_PATH.length;
-    const i = Math.floor(this.titleT / seg) % n, k = (this.titleT % seg) / seg;
-    const a = TITLE_PATH[i], b = TITLE_PATH[(i + 1) % n];
+    const seg = 10;
+    const shots = this.titleShots || TITLE_SHOTS;
+    const sh = shots[Math.floor(this.titleT / seg) % shots.length], k = (this.titleT % seg) / seg;
     const e = k * k * (3 - 2 * k);
-    this.rig.pos = v3lerp(a[0], b[0], e); this.rig.look = v3lerp(a[1], b[1], e); this.rig.fov = 55;
+    this.rig.pos = v3lerp(sh.p0, sh.p1, e); this.rig.look = v3lerp(sh.l0, sh.l1, e); this.rig.fov = 52;
     this.player.x = this.rig.pos[0]; this.player.z = this.rig.pos[2];
     this.clock = 18.25;
     this.simulateWorld(dt);

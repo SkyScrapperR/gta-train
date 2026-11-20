@@ -343,7 +343,7 @@ function buildLandmark(city, block, key, def, rnd) {
       for (let k = 0; k < 4; k++) city.containers.push({ x: x0 + 20 + k * 13, z: z1 - 10, y: 0, yaw: 0, color: [[0.45, 0.15, 0.55], [0.9, 0.45, 0.1]][k % 2] });
       city.containers.push({ x: x0 + 33, z: z1 - 10, y: 2.6, yaw: 0, color: [0.45, 0.15, 0.55] });
       city.cranes.push({ x: x1 + 14, z: cz, yaw: Math.PI / 2 });
-      for (let k = 0; k < 8; k++) city.crates.push({ x: x0 + 9 + rnd.range(-1, 1), z: z0 + 50 + k * 1.4 });
+      for (let k = 0; k < 8; k++) city.crates.push({ x: x0 + 2.6 + (k % 2) * 1.25, z: z0 + 14 + Math.floor(k / 2) * 1.3 });
       lm.yard = { x: x0 + 8, z: cz };
       break;
     case 'respray':

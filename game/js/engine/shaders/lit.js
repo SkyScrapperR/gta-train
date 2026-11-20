@@ -99,7 +99,7 @@ void facade(int mat, vec3 N, inout vec3 albedo, inout vec3 emis, inout float spe
       vec3 tint = h2 < 0.6 ? warm : (h2 < 0.9 ? cool : pink);
       // interior variation: blinds / gradient
       float inner = 0.6 + 0.4 * step(0.3, fract(f.x * 3.0 + h * 7.0)) * (0.7 + 0.3 * f.y);
-      emis += tint * tint * inner * (0.15 + 3.2 * uNight) * (0.5 + 0.6 * h2);
+      emis += tint * tint * inner * (0.12 + 2.3 * uNight) * (0.45 + 0.6 * h2);
       refl *= 0.4;
     }
   } else if (mat == ${9}) {

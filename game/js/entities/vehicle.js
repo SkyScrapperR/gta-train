@@ -247,7 +247,10 @@ export class VehicleSystem {
         if (v.fire > 0) g.particles.fire(fp[0], fp[1], fp[2], 0.8);
         g.particles.smoke(fp[0], fp[1] + 0.3, fp[2], v.health < 250 ? 0.25 : 0.55, 0.9);
       }
-      if (g.particles && v.destroyed && v.wreckTimer < 25 && Math.random() < dt * 8) g.particles.smoke(v.x, v.y + 1.2, v.z, 0.12, 1.4);
+      if (g.particles && v.destroyed && v.wreckTimer < 25) {
+        if (Math.random() < dt * 10) g.particles.smoke(v.x, v.y + 1.4, v.z, 0.14, 1.6, v.wreckTimer < 15 ? 0.25 : 0.05);
+        if (v.wreckTimer < 15 && Math.random() < dt * 30) g.particles.fire(v.x + (Math.random() - 0.5) * v.spec.W, v.y + 0.8, v.z + (Math.random() - 0.5) * v.spec.L * 0.6, 1.6);
+      }
       if (g.particles && v.skidding && v.speed > 6 && !v.destroyed) {
         for (const side of [-1, 1]) { const w = v.local(side * v.spec.track / 2, 0, -v.spec.wheelbase / 2); g.particles.skid(w[0], w[2], v.yaw); }
         if (Math.random() < dt * 25) { const w = v.local(0, 0.2, -v.spec.L / 2); g.particles.smoke(w[0], w[1], w[2], 0.75, 0.6); }
