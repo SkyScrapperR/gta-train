@@ -177,11 +177,12 @@ export class Renderer {
     gl.enable(gl.BLEND);
     gl.depthMask(false);
     gl.disable(gl.CULL_FACE);
-    if (f.cones && f.cones.count) {
+    const cones = Array.isArray(f.cones) ? f.cones : f.cones ? [f.cones] : [];
+    if (cones.some((c) => c.count)) {
       gl.blendFunc(gl.ONE, gl.ONE);
       const c = this.progs.cone.use();
       c.set('uViewProj', f.camera.viewProj).set('uCamPos', cp);
-      f.cones.draw(); st.drawCalls++;
+      for (const b of cones) if (b.count) { b.draw(); st.drawCalls++; }
     }
     const pp = this.progs.particles.use();
     pp.set('uViewProj', f.camera.viewProj).set('uCamPos', cp).set('uCamRight', f.camera.right).set('uCamUp', f.camera.up)

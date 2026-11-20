@@ -12,7 +12,7 @@ const SW_Y = 0.15; // sidewalk height
 export function groundHeight(x, z) {
   if (z > BEACH.z0 + 8 && x > BEACH.x0 && x < BEACH.x1) {
     if (x >= FERRY_PIER.x0 && x <= FERRY_PIER.x1 && z <= FERRY_PIER.z1) return SW_Y + 0.5;
-    return SW_Y - (z - (BEACH.z0 + 8)) * 0.02;
+    return SW_Y - (z - (BEACH.z0 + 8)) * 0.01;
   }
   for (const p of [FERRY_PIER, EAST_PIER]) if (x >= p.x0 && x <= p.x1 && z >= p.z0 && z <= p.z1) return SW_Y + 0.5;
   // roads are at 0, everything else in the city (sidewalks, lots) is raised

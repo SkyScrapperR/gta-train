@@ -134,8 +134,8 @@ export class Vehicle {
   }
 
   damage(amount, source) {
-    if (this.destroyed) return;
-    this.health -= amount;
+    if (this.destroyed || this.invulnerable) return;
+    this.health -= amount * (this.damageMult || 1);
     this.lastAttacker = source || this.lastAttacker;
     if (this.health < 120 && !this.fire) this.fire = 0.01;
   }
