@@ -352,6 +352,7 @@ class Game {
   }
 
   frame(ts) {
+    if (this.frozen) { requestAnimationFrame((t) => this.frame(t)); return; } // test hook: hold the last frame
     const rawDt = Math.max(0, (ts - this.last) / 1000);
     const dt = Math.min(0.05, rawDt);
     this.last = ts;
@@ -396,6 +397,7 @@ class Game {
     this.updateOverlay(dt);
     this.checkArea();
     this.stats.timePlayed += dt;
+    this.contextTips();
     const p = this.player;
     if (this.cinematic) this.updateCinematicCam(realDt);
     else if (p.state === 'driving') this.rig.updateCar(realDt, p.vehicle, this.mouseFrame);
@@ -429,6 +431,19 @@ class Game {
     this.weatherT -= dt;
     if (this.weatherT <= 0) { this.rainTarget = Math.random() < 0.3 ? 0.6 + Math.random() * 0.4 : 0; this.weatherT = 180 + Math.random() * 240; }
     this.rain += clamp(this.rainTarget - this.rain, -dt * 0.02, dt * 0.02);
+  }
+  // Contextual help tips (enter vehicle, start mission, shops).
+  contextTips() {
+    const p = this.player, h = this.hud;
+    if (this.tipT > 0) { this.tipT -= 1 / 30; return; }
+    this.tipT = 0.25;
+    if (p.state === 'foot' && p.alive) {
+      const v = this.vehicles.nearestEnterable(p.x, p.z, 3.2);
+      if (v) { h.tip(`Press F to ${v.driver ? 'steal' : 'enter'} the ${v.spec.name}`, 0.6); return; }
+      const m = this.markers.list.find((mk) => mk.enabled && mk.label && Math.hypot(mk.x - p.x, mk.z - p.z) < 9);
+      if (m) { h.tip(m === this.markers.save ? 'Step into the marker to save' : `${m.label}: step into the marker`, 0.6); return; }
+    } else if (p.state === 'driving' && !this.tipShownDrive) { this.tipShownDrive = true; h.tip('R: radio   H: horn   Space: handbrake   F: exit', 4); }
+    if (!this.input.locked && this.state === 'playing' && !this.noAutoPause && !h.help) h.tip('Click to capture the mouse', 0.6);
   }
   checkArea() {
     const p = this.player;

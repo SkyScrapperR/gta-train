@@ -19,11 +19,14 @@ for (const n of shots) {
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(`${url}?shot=${n}&quality=high&scale=1`);
+  page.setDefaultTimeout(900000);
   await page.waitForFunction(() => window.__shotReady === true, null, { timeout: 900000, polling: 1000 });
   // let a few full frames render so bloom/eye adaptation settle
   await page.evaluate(() => new Promise((r) => { let k = 0; const f = () => (++k > 3 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); }));
+  await page.evaluate(() => { window.__game.frozen = true; });
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   const out = path.join(root, 'screenshots', NAMES[n]);
-  await page.screenshot({ path: out });
+  await page.screenshot({ path: out, timeout: 600000 });
   console.log('captured', NAMES[n], errors.length ? `errors: ${errors.join(' | ')}` : '');
   if (errors.length) failed = true;
   await page.close();

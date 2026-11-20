@@ -29,6 +29,7 @@ export async function setupShot(game, n) {
     const car = g.vehicles.spawn('vesper', 537.6, 430, Math.PI, [0.95, 0.8, 0.1]);
     p.state = 'driving'; p.vehicle = car; car.driver = p; p.visible = true;
     g.onPlayerEnteredVehicle(car);
+    g.tipShownDrive = true;
     g.cheatNoArrest = true;
     p.invulnerable = true; p.damage = () => false;
     car.invulnerable = true;
@@ -71,7 +72,7 @@ export async function setupShot(game, n) {
     const run = g.missions.run, lin = run.actors.find((a) => a.key === 'lin');
     g.missions.dialogue.cur.dur = 999; // hold the first line for the capture
     const mx = (p.x + lin.x) / 2, mz = (p.z + lin.z) / 2;
-    g.rig.shot = Shots.dolly([mx - 3.4, 1.25, mz - 7.6], [mx - 3.0, 1.3, mz - 7.2], [mx + 0.6, 3.3, mz + 2], null, 9, 50);
+    g.rig.shot = Shots.dolly([mx - 1.9, 1.62, mz - 4.6], [mx - 1.7, 1.64, mz - 4.4], [mx + 0.25, 1.95, mz + 1.5], null, 9, 46);
     g.missions.dialogue.shotT = 2;
     g.hud.banner = null;
     await wait(g, 0.4);

@@ -81,7 +81,8 @@ export class Hud {
       if (this.help) {
         const a = clamp(Math.min(this.help.t * 4, (this.help.dur - this.help.t) * 3), 0, 1);
         g.globalAlpha = a;
-        panel(g, 30, 30, 420, 74, theme.magenta);
+        g.font = `600 22px ${theme.body}`;
+        panel(g, 30, 30, Math.max(300, g.measureText(this.help.msg).width + 44), 74, theme.magenta);
         text(g, this.help.msg, 50, 76, { size: 22, font: theme.body, outline: 0 });
         g.globalAlpha = 1;
       }

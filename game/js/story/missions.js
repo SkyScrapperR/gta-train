@@ -57,11 +57,11 @@ class Run {
   cutscene(lines, opts = {}) {
     const g = this.g;
     let fin = false;
-    g.state = 'cutscene'; g.controlsLocked = true; g.input.exitLock?.();
+    g.state = 'cutscene'; g.controlsLocked = true;
     if (opts.setup) opts.setup();
     this.sys.dialogue.play(lines, () => { fin = true; });
     if (opts.music) g.audio.music?.play(opts.music);
-    return { tick: () => { if (!fin) return false; g.state = 'playing'; g.controlsLocked = false; g.rig.shot = null; g.rig.snap = true; g.input.requestLock?.(); if (opts.music) g.audio.music?.play(null); return true; } };
+    return { tick: () => { if (!fin) return false; g.state = 'playing'; g.controlsLocked = false; g.rig.shot = null; g.rig.snap = true; if (opts.music) g.audio.music?.play(null); return true; } };
   }
   say(lines) { this.sys.dialogue.play(lines, null); }
   // ---- helpers
