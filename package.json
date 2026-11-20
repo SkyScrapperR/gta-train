@@ -1,0 +1,14 @@
+{
+  "name": "selara-bay",
+  "version": "1.0.0",
+  "description": "An original 3D open-world crime game running on a hand-written WebGL2 engine. (Work in progress.)",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "private": "true",
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

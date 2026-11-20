@@ -1,0 +1,66 @@
+// Billboard particles (smoke, fire, sparks, rain streaks, tracers) and additive light cones.
+import { FOG_GLSL } from './common.js';
+
+// Instance layout (24 floats): [pos.xyz, size] [color rgba] [vel.xyz, stretch] [type, rot, emissive, softness] + 8 unused.
+export const PARTICLE_VS = /* glsl */ `
+in vec3 a_pos;
+in mat4 a_inst0;
+uniform mat4 uViewProj; uniform vec3 uCamPos; uniform vec3 uCamRight; uniform vec3 uCamUp;
+out vec2 vQ; out vec4 vCol; out vec4 vInfo; out vec3 vWorld;
+void main() {
+  vec4 ps = a_inst0[0], col = a_inst0[1], vel = a_inst0[2], info = a_inst0[3];
+  vec2 q = a_pos.xy; // -1..1 quad
+  vec3 world;
+  if (vel.w > 0.0) {
+    // stretched along velocity (rain, tracers, sparks)
+    vec3 d = normalize(vel.xyz + vec3(0.0, 0.00001, 0.0));
+    vec3 toCam = normalize(uCamPos - ps.xyz);
+    vec3 side = normalize(cross(d, toCam));
+    world = ps.xyz + side * q.x * ps.w + d * q.y * vel.w;
+  } else {
+    float c = cos(info.y), s = sin(info.y);
+    vec2 r = vec2(q.x * c - q.y * s, q.x * s + q.y * c);
+    world = ps.xyz + (uCamRight * r.x + uCamUp * r.y) * ps.w;
+  }
+  vQ = q; vCol = col; vInfo = info; vWorld = world;
+  gl_Position = uViewProj * vec4(world, 1.0);
+}`;
+
+export const PARTICLE_FS = /* glsl */ `
+in vec2 vQ; in vec4 vCol; in vec4 vInfo; in vec3 vWorld;
+out vec4 fragColor;
+uniform vec3 uCamPos; uniform vec3 uSunDir; uniform float uAdditive; uniform vec3 uAmbient;
+${FOG_GLSL}
+void main() {
+  float r = length(vQ);
+  float a;
+  int type = int(vInfo.x + 0.5);
+  if (type == 1) a = smoothstep(1.0, 0.0, abs(vQ.x)) * smoothstep(1.0, 0.6, abs(vQ.y)); // streak
+  else if (type == 2) a = pow(max(1.0 - r, 0.0), 1.5); // glow
+  else a = smoothstep(1.0, 0.3, r) * (0.75 + 0.25 * sin(vQ.x * 4.0 + vInfo.y * 3.0) * sin(vQ.y * 3.0)); // puff
+  a *= vCol.a;
+  if (a < 0.003) discard;
+  vec3 c = vCol.rgb;
+  if (uAdditive < 0.5) {
+    c = c * (uAmbient + vInfo.z);
+    c = applyFog(c, vWorld, uCamPos, uSunDir);
+    fragColor = vec4(c, a);
+  } else {
+    fragColor = vec4(c * a * (1.0 + vInfo.z), 1.0);
+  }
+}`;
+
+// Additive volumetric-looking cone (helicopter spotlight, headlight beams). Fades by angle and length.
+export const CONE_FS = /* glsl */ `
+in vec3 vWorld; in vec3 vNormal; in vec2 vUV; in vec3 vColor; in vec4 vInstColor; in vec4 vExtra;
+in vec4 vShadow; in vec3 vLocal; flat in int vMat; flat in float vParam;
+out vec4 fragColor;
+uniform vec3 uCamPos;
+void main() {
+  vec3 V = normalize(uCamPos - vWorld);
+  float edge = pow(abs(dot(normalize(vNormal), V)), 1.5);
+  float along = clamp(vUV.y, 0.0, 1.0);
+  float a = edge * (1.0 - along) * (0.4 + 0.6 * along * 2.0);
+  a *= smoothstep(0.0, 0.08, along) * 0.9 + 0.1;
+  fragColor = vec4(vInstColor.rgb * vInstColor.a * a, 1.0);
+}`;
