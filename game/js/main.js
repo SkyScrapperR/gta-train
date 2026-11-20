@@ -10,6 +10,13 @@ import { CharacterRenderer } from './entities/character-model.js';
 import { Player } from './entities/player.js';
 import { Inventory } from './combat/weapons.js';
 import { VehicleSystem } from './entities/vehicle.js';
+import { TrafficSystem } from './ai/traffic.js';
+import { PedestrianSystem } from './entities/pedestrian.js';
+import { WantedSystem, PoliceSystem } from './ai/police.js';
+import { Particles } from './fx/particles.js';
+import { FxLights } from './fx/lights.js';
+import { Combat } from './combat/combat.js';
+import { Pickups } from './combat/pickups.js';
 
 const params = new URLSearchParams(location.search);
 
@@ -31,8 +38,12 @@ class Game {
     this.controlsLocked = false;
     this.settings = { quality: params.get('quality') || 'medium' };
     this.renderer.setQuality(this.settings.quality);
+    if (params.has('scale')) this.renderer.forcedScale = Number(params.get('scale'));
     this.frameLights = [];
     this.fps = 60; this.fpsAcc = 0; this.fpsFrames = 0;
+    this.money = 0; this.moneyShown = 0;
+    this.stats = { kills: 0, carsStolen: 0, missions: 0, tags: 0, timePlayed: 0, moneyEarned: 0 };
+    this.slowT = 0; this.slowScale = 1;
   }
 
   async init() {
@@ -43,6 +54,15 @@ class Game {
     this.charRenderer = new CharacterRenderer(this.gl);
     this.weapons = new Inventory(this);
     this.vehicles = new VehicleSystem(this);
+    this.traffic = new TrafficSystem(this);
+    this.peds = new PedestrianSystem(this);
+    this.wanted = new WantedSystem(this);
+    this.police = new PoliceSystem(this);
+    this.particles = new Particles(this);
+    this.lightsFx = new FxLights();
+    this.combat = new Combat(this);
+    this.pickups = new Pickups(this);
+    this.pickups.placeWorldPickups();
     const spawn = (params.get('spawn') || '447,920').split(',').map(Number);
     this.player = new Player(this, spawn[0], spawn[1]);
     this.player.yaw = Math.PI;
@@ -57,6 +77,7 @@ class Game {
       this.vehicles.spawn('bison', spawn[0] + 3, spawn[1] - 28, Math.PI);
       this.vehicles.spawn('kancil', spawn[0] - 3, spawn[1] - 35, Math.PI);
     }
+    if (!params.has('notraffic')) { this.traffic.prefill(); this.peds.prefill(); }
     this.state = 'playing';
     this.hudCanvas.getContext('2d').clearRect(0, 0, this.hudCanvas.width, this.hudCanvas.height);
     window.__game = this;
@@ -88,15 +109,24 @@ class Game {
 
   onPlayerEnteredVehicle(v) { this.rig.snap = false; this.events.emit('enterVehicle', v); }
   onPlayerExitedVehicle(v) { this.rig.yaw = v ? v.yaw : this.rig.yaw; this.events.emit('exitVehicle', v); }
+  addMoney(n) { this.money = Math.max(0, this.money + n); if (n > 0) this.stats.moneyEarned += n; this.events.emit('money', n); }
+  slowMo(scale, dur) { this.slowScale = scale; this.slowT = Math.max(this.slowT, dur); }
+  busted() { this.wanted.clear(); this.player.health = 100; console.log('CUFFED'); }
   removeCharacter(ch) { const i = this.characters.indexOf(ch); if (i >= 0) this.characters.splice(i, 1); if (ch.vehicle && ch.vehicle.driver === ch) ch.vehicle.driver = null; }
 
   frame(ts) {
-    let dt = Math.min(0.05, (ts - this.last) / 1000);
+    const rawDt = Math.max(0, (ts - this.last) / 1000);
+    let dt = Math.min(0.05, rawDt);
     this.last = ts;
-    this.fpsAcc += dt; this.fpsFrames++;
+    this.fpsAcc += rawDt; this.fpsFrames++;
     if (this.fpsAcc > 0.5) { this.fps = this.fpsFrames / this.fpsAcc; this.fpsAcc = 0; this.fpsFrames = 0; }
     this.time += dt;
-    this.update(dt * this.timeScale, dt);
+    // slow-motion moments (big crashes, explosions, death)
+    if (this.slowT > 0) { this.slowT -= dt; this.timeScale = this.slowScale; } else this.timeScale = 1;
+    // test hook: several fixed simulation steps per rendered frame (headless play-tests)
+    const steps = this.simSpeed || 1;
+    if (steps > 1) { for (let i = 0; i < steps; i++) { this.update(1 / 30 * this.timeScale, 1 / 30); if (i < steps - 1) this.input.endFrame(); } }
+    else this.update(dt * this.timeScale, dt);
     this.render(dt);
     this.input.endFrame();
     requestAnimationFrame((t) => this.frame(t));
@@ -109,7 +139,16 @@ class Game {
     this.env = computeEnvironment(this.clock, this.rain);
     this.weapons.update(dt);
     this.player.update(dt, this.input, this.rig);
+    this.traffic.update(dt);
+    this.police.update(dt);
     this.vehicles.update(dt);
+    this.peds.update(dt);
+    this.wanted.update(dt);
+    this.pickups.update(dt);
+    this.particles.update(dt);
+    this.lightsFx.update(dt);
+    if (this.rain > 0) this.particles.rain(this.camera.pos, this.rain * dt * 60);
+    this.stats.timePlayed += dt;
     for (const ch of this.characters) if (ch !== this.player && ch.vehicle) { const st = ch.vehicle.seatWorld(ch.vehicle.driver === ch ? 0 : 1); ch.x = st[0]; ch.y = st[1]; ch.z = st[2]; ch.yaw = ch.vehicle.yaw; ch.updateAnim(dt, 'sit'); }
     if (this.player.state === 'driving') this.rig.updateCar(realDt, this.player.vehicle, this.mouseFrame);
     else this.rig.updateFoot(realDt, this.player, this.mouseFrame, this.player.aiming);
@@ -127,10 +166,15 @@ class Game {
     const lights = this.frameLights; lights.length = 0;
     this.world.collectLights(lights, this.camera.pos, env.night);
     this.vehicles.collectLights(lights, this.camera.pos, env.night);
+    this.lightsFx.collect(lights);
+    this.pickups.collectLights(lights, this.camera.pos);
+    this.pickups.render();
+    this.particles.upload(this.camera.pos);
     this.renderer.render({
       camera: this.camera, env, time: this.time, wet: this.rain,
       chunks: this.world.chunks,
-      batches: [...this.world.batches(), ...this.charRenderer.list(), ...this.vehicles.list_batches()],
+      batches: [...this.world.batches(), ...this.charRenderer.list(), ...this.vehicles.list_batches(), ...Object.values(this.pickups.batches)],
+      particlesAlpha: this.particles.alpha, particlesAdd: this.particles.add,
       lights, water: this.world.water,
       post: { exposure: env.exposure, gradeGain: env.gradeGain, gradeLift: env.gradeLift, saturation: env.sat },
       focus: [this.player.x, this.player.y, this.player.z],

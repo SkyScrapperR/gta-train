@@ -55,7 +55,7 @@ export class Renderer {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const cw = Math.floor(this.canvas.clientWidth * dpr), ch = Math.floor(this.canvas.clientHeight * dpr);
     if (this.canvas.width !== cw || this.canvas.height !== ch) { this.canvas.width = cw; this.canvas.height = ch; }
-    const s = this.quality.renderScale * this.dynamicScale / Math.max(1, dpr * 0.75);
+    const s = (this.forcedScale || this.quality.renderScale * this.dynamicScale) / Math.max(1, dpr * 0.75);
     this.rw = Math.max(320, Math.floor(cw * Math.min(1, s))); this.rh = Math.max(180, Math.floor(ch * Math.min(1, s)));
     this.post.resize(this.rw, this.rh);
   }

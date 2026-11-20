@@ -168,7 +168,7 @@ void main() {
   else if (m == 16) {
     vec4 t = texture(uAtlas, vUV);
     albedo = t.rgb * 0.8;
-    emis = t.rgb * t.rgb * (0.5 + 2.6 * uNight) * vParam;
+    emis = t.rgb * t.rgb * (0.35 + 1.3 * uNight) * vParam;
     spec = 0.3;
   }
   else if (m == 17) { float wear = smoothstep(0.35, 0.65, fbm(vWorld.xz * 1.3)); albedo = mix(vColor, vec3(0.16), wear * 0.55); spec = 0.2; wetMask = 0.8; }

@@ -243,7 +243,7 @@ export class CityMeshBuilder {
     const side = lm ? this.sideOfEntry(lm) : 'n';
     const f = this.faceInfo(p, side);
     const w = Math.min(f.along - 4, 16);
-    const y = Math.min(p.y1 - 1.5 - w / 4, 6);
+    const y = p.y1 > 10 ? 5.2 : p.y1 + 0.3;
     b.style([0.1, 0.1, 0.1], MAT.PLAIN);
     this.faceQuad(b, f.cx + f.n[0] * 0.1, f.cz + f.n[1] * 0.1, f.n, w + 0.6, y - 0.3, y + w / 4 + 0.3);
     b.style([1, 1, 1], MAT.SIGN, 1.6);

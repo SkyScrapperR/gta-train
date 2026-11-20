@@ -11,7 +11,16 @@ void main() {
   vec4 ps = a_inst0[0], col = a_inst0[1], vel = a_inst0[2], info = a_inst0[3];
   vec2 q = a_pos.xy; // -1..1 quad
   vec3 world;
-  if (vel.w > 0.0) {
+  int ptype = int(info.x + 0.5);
+  if (ptype >= 3) {
+    // decal lying on a surface with normal vel.xyz, rotated by info.y
+    vec3 n = normalize(vel.xyz);
+    vec3 t = normalize(abs(n.y) > 0.9 ? cross(n, vec3(1.0, 0.0, 0.0)) : cross(n, vec3(0.0, 1.0, 0.0)));
+    vec3 bt = cross(n, t);
+    float c = cos(info.y), s = sin(info.y);
+    vec2 r = vec2(q.x * c - q.y * s, q.x * s + q.y * c);
+    world = ps.xyz + n * 0.02 + (t * r.x * (vel.w > 0.0 ? vel.w : 1.0) + bt * r.y) * ps.w;
+  } else if (vel.w > 0.0) {
     // stretched along velocity (rain, tracers, sparks)
     vec3 d = normalize(vel.xyz + vec3(0.0, 0.00001, 0.0));
     vec3 toCam = normalize(uCamPos - ps.xyz);
@@ -37,6 +46,7 @@ void main() {
   int type = int(vInfo.x + 0.5);
   if (type == 1) a = (1.0 - smoothstep(0.0, 1.0, abs(vQ.x))) * (1.0 - smoothstep(0.6, 1.0, abs(vQ.y))); // streak
   else if (type == 2) a = pow(max(1.0 - r, 0.0), 1.5); // glow
+  else if (type >= 3) a = (1.0 - smoothstep(0.5, 1.0, r)) * (0.7 + 0.3 * fract(sin(dot(floor(vQ * 4.0), vec2(12.9, 78.2))) * 43758.5)); // decal
   else a = (1.0 - smoothstep(0.3, 1.0, r)) * (0.75 + 0.25 * sin(vQ.x * 4.0 + vInfo.y * 3.0) * sin(vQ.y * 3.0)); // puff
   a *= vCol.a;
   if (a < 0.003) discard;

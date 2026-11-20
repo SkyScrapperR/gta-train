@@ -87,16 +87,19 @@ export class StreetProps {
     this.poles = new InstanceBatch(signalPoleMesh(gl), { name: 'signalpoles' });
     this.signalLamps = new InstanceBatch(signalLampMesh(gl), { name: 'signals', castShadow: false });
     this.tags = new InstanceBatch(tagMesh(gl), { name: 'tags', castShadow: false });
+    // static instances are kept here and copied into the batches by distance (see cull())
+    this.statics = { trees: [], cones: [], palms: [], poles: [] };
+    const keep = (list, x, z, yaw, s) => list.push({ x, z, m: Float32Array.from(m4fromYPR(M, x, groundHeight(x, z), z, yaw, 0, 0, s, s, s)) });
     for (const t of city.trees) {
-      const y = groundHeight(t.x, t.z), yaw = (t.x * 13.7 + t.z) % 6.28;
-      if (t.kind === 'palm') this.palms.add(m4fromYPR(M, t.x, y, t.z, yaw, 0, 0, t.s, t.s, t.s), 1, 1, 1, 1);
-      else (t.kind === 'cone' ? this.cones : this.trees).add(m4fromYPR(M, t.x, y, t.z, yaw, 0, 0, t.s, t.s, t.s), 1, 1, 1, 1);
+      const yaw = (t.x * 13.7 + t.z) % 6.28;
+      keep(t.kind === 'palm' ? this.statics.palms : t.kind === 'cone' ? this.statics.cones : this.statics.trees, t.x, t.z, yaw, t.s);
       collision.addCircle(t.x, t.z, 0.35 * t.s, 6, 'tree');
     }
     for (const p of city.palms) {
-      this.palms.add(m4fromYPR(M, p.x, groundHeight(p.x, p.z), p.z, (p.x * 7.3) % 6.28, 0, 0, p.s, p.s, p.s), 1, 1, 1, 1);
+      keep(this.statics.palms, p.x, p.z, (p.x * 7.3) % 6.28, p.s);
       collision.addCircle(p.x, p.z, 0.3, 8, 'tree');
     }
+    this.cullT = 0; this.cullPos = [1e9, 0, 1e9];
     // streetlights: breakable poles; we keep the instance index to hide them when knocked over
     this.lampList = [];
     const pierLamps = (city.pierLamps || []).map((p) => ({ x: p.x, z: p.z, yaw: 0, pier: true }));
@@ -107,7 +110,6 @@ export class StreetProps {
       lamp.collider = collision.addCircle(l.x, l.z, 0.15, 7.5, 'lamp', lamp);
       this.lampList.push(lamp);
     }
-    this.rebuildLamps();
     // traffic-light poles: one per approach, on the left kerb before the junction (left-hand traffic)
     this.heads = [];
     for (const n of roads.nodes) {
@@ -119,7 +121,7 @@ export class StreetProps {
         const lx = dz, lz = -dx; // left of travel
         const px = n.x - dx * (ROAD_HALF + 1.2) + lx * (ROAD_HALF + 0.7), pz = n.z - dz * (ROAD_HALF + 1.2) + lz * (ROAD_HALF + 0.7);
         const yaw = Math.atan2(-lx, -lz); // arm reaches over the lane (toward -left)
-        this.poles.add(m4fromYPR(M, px, 0.15, pz, yaw), 1, 1, 1, 1);
+        this.statics.poles.push({ x: px, z: pz, m: Float32Array.from(m4fromYPR(M, px, 0.15, pz, yaw)) });
         collision.addCircle(px, pz, 0.15, 6, 'signal');
         // signal head faces oncoming traffic (-d); lamps arranged vertically at the arm end
         const hx = px - lx * 3.0, hz = pz - lz * 3.0;
@@ -131,10 +133,25 @@ export class StreetProps {
     this.time = 0;
   }
 
+  cull(camPos, force = false) {
+    const moved = Math.hypot(camPos[0] - this.cullPos[0], camPos[2] - this.cullPos[2]);
+    if (!force && moved < 25) return;
+    this.cullPos = camPos.slice();
+    const fill = (batch, list, R) => {
+      batch.reset();
+      for (const it of list) if (Math.abs(it.x - camPos[0]) < R && Math.abs(it.z - camPos[2]) < R) batch.add(it.m, 1, 1, 1, 1);
+    };
+    const R = this.drawRadius || 300;
+    fill(this.trees, this.statics.trees, R); fill(this.cones, this.statics.cones, R); fill(this.palms, this.statics.palms, R);
+    fill(this.poles, this.statics.poles, R * 0.7);
+    this.rebuildLamps();
+  }
   rebuildLamps() {
     const M = m4();
     this.lamps.reset();
+    const c = this.cullPos, R = (this.drawRadius || 300) * 0.8;
     for (const l of this.lampList) {
+      if (Math.abs(l.x - c[0]) > R || Math.abs(l.z - c[2]) > R) continue;
       if (l.alive) this.lamps.add(m4fromYPR(M, l.x, l.y, l.z, l.yaw), 1, 1, 1, 1);
       else this.lamps.add(m4fromYPR(M, l.x, l.y, l.z, l.fallYaw, Math.min(l.fall, 1) * 1.45, 0), 1, 1, 1, 1);
     }
@@ -149,6 +166,7 @@ export class StreetProps {
 
   update(dt, camPos, night) {
     this.time += dt;
+    this.cull(camPos);
     let falling = false;
     for (const l of this.lampList) if (!l.alive && l.fall < 1) { l.fall = Math.min(1, l.fall + dt * 2.2); falling = true; }
     if (falling) this.rebuildLamps();

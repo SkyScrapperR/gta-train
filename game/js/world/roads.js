@@ -73,7 +73,10 @@ export class RoadGraph {
     const a = this.nearestNode(x, z), b = this.nearestNode(tx, tz);
     const ids = this.findPath(a.id, b.id);
     const pts = [[x, z]];
-    for (const id of ids) pts.push([this.nodes[id].x, this.nodes[id].z]);
+    const nodes = ids.map((id) => this.nodes[id]);
+    // skip the first node if we're already past it toward the second
+    if (nodes.length >= 2 && Math.hypot(nodes[1].x - x, nodes[1].z - z) < Math.hypot(nodes[1].x - nodes[0].x, nodes[1].z - nodes[0].z)) nodes.shift();
+    for (const n of nodes) pts.push([n.x, n.z]);
     pts.push([tx, tz]);
     return pts;
   }
