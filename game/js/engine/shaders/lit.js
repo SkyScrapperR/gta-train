@@ -146,8 +146,12 @@ void main() {
     // patches and cracks
     float patchy = smoothstep(0.62, 0.66, fbm(vWorld.xz * 0.06 + 3.0));
     albedo = mix(albedo, albedo * 0.7, patchy);
-    float crack = (1.0 - smoothstep(0.0, 0.03, abs(fbm(vWorld.xz * 0.25 + 9.0) - 0.5)));
-    albedo *= 1.0 - crack * 0.5;
+    float crack = (1.0 - smoothstep(0.0, 0.012, abs(fbm(vWorld.xz * 0.35 + 9.0) - 0.5))) * smoothstep(0.55, 0.7, vnoise(vWorld.xz * 0.05));
+    albedo *= 1.0 - crack * 0.4;
+    // worn tyre tracks along lane centres
+    float lx = abs(fract(vWorld.x / 90.0 + 0.5) - 0.5) * 90.0, lz = abs(fract(vWorld.z / 90.0 + 0.5) - 0.5) * 90.0;
+    float lane = min(abs(lx - 2.6), abs(lz - 2.6));
+    albedo *= 1.0 - 0.12 * (1.0 - smoothstep(0.3, 0.9, abs(lane - 0.0))) * step(min(lx, lz), 5.0);
     // tire tracks: darker bands along lanes (based on fract of position)
     spec = 0.15; gloss = 24.0;
     wetMask = 1.0;
