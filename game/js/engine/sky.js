@@ -52,7 +52,7 @@ export function computeEnvironment(hour, rain = 0) {
     env.sunGlow = env.sunGlow.map((v) => v * (1 - 0.8 * rain));
   }
   env.rain = rain;
-  env.fogDensity = lerp(0.0016, 0.0034, env.night) + rain * 0.004;
+  env.fogDensity = lerp(0.0009, 0.0022, env.night) + rain * 0.004;
   env.fogHeight = 0.018;
   env.rim = mixArr([0.05, 0.06, 0.07], [0.12, 0.2, 0.32], env.night);
   return env;

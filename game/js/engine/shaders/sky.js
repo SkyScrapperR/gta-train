@@ -37,7 +37,7 @@ void main() {
       vec3 c = cell + 0.5 + (vec3(hash13(cell + 1.3), hash13(cell + 2.7), hash13(cell + 5.1)) - 0.5) * 0.6;
       float d = length(sp - c);
       float tw = 0.6 + 0.4 * sin(uTime * 3.0 + h * 100.0);
-      col += vec3(0.8, 0.85, 1.0) * smoothstep(0.35, 0.0, d) * uNight * tw * (1.0 - uRain) * 2.5 * smoothstep(0.0, 0.25, y);
+      col += vec3(0.8, 0.85, 1.0) * (1.0 - smoothstep(0.0, 0.35, d)) * uNight * tw * (1.0 - uRain) * 2.5 * smoothstep(0.0, 0.25, y);
     }
   }
   // moon

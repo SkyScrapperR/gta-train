@@ -21,8 +21,8 @@ export class Renderer {
     const gl = (this.gl = createContext(canvas));
     this.fullscreen = createFullscreen(gl);
     this.progs = {
-      lit: new Program(gl, LIT_VS, LIT_FS, 'lit'),
-      litInst: new Program(gl, LIT_VS, LIT_FS, 'litInst', '#define INSTANCED 1'),
+      lit: new Program(gl, LIT_VS, LIT_FS, 'lit', location.search.includes('dbgmat') ? '#define DBG 1' : ''),
+      litInst: new Program(gl, LIT_VS, LIT_FS, 'litInst', '#define INSTANCED 1\n' + (location.search.includes('dbgmat') ? '#define DBG 1' : '')),
       depth: new Program(gl, DEPTH_VS, DEPTH_FS, 'depth'),
       depthInst: new Program(gl, DEPTH_VS, DEPTH_FS, 'depthInst', '#define INSTANCED 1'),
       water: new Program(gl, WATER_VS, WATER_FS, 'water'),

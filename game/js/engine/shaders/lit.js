@@ -67,6 +67,7 @@ vec3 envColor(vec3 R) {
 }
 
 // Procedural building facade. Returns albedo in .rgb and writes emission/spec via out params.
+float glassMode = 0.0;
 void facade(int mat, vec3 N, inout vec3 albedo, inout vec3 emis, inout float spec, inout float refl, inout float gloss) {
   if (abs(N.y) > 0.5) { albedo *= 0.85 + 0.15 * vnoise(vWorld.xz * 0.5); return; }
   float u = abs(N.x) > 0.5 ? vWorld.z : vWorld.x;
@@ -84,20 +85,21 @@ void facade(int mat, vec3 N, inout vec3 albedo, inout vec3 emis, inout float spe
   // wall grime
   float grime = fbm(vec2(u * 0.15, vWorld.y * 0.08) + seed);
   albedo *= 0.8 + 0.3 * grime;
-  albedo *= 1.0 - 0.18 * smoothstep(6.0, 0.0, vWorld.y);
+  albedo *= 1.0 - 0.18 * (1.0 - smoothstep(0.0, 6.0, vWorld.y));
   if (mask > 0.5) {
     float h = hash12(cell + seed * 17.13);
     float h2 = hash12(cell * 1.7 + seed * 5.3);
     vec3 glassTint = mat == ${9} ? vColor * 0.55 : vec3(0.10, 0.13, 0.17);
     albedo = glassTint * (0.5 + 0.2 * h2);
-    spec = 1.0; refl = mat == ${9} ? 0.65 : 0.45; gloss = 120.0;
-    float litFrac = mix(0.04, 0.42 + 0.15 * sin(seed), uNight);
+    spec = 1.0; refl = mat == ${9} ? 0.6 : 0.4; gloss = 120.0;
+    glassMode = 1.0;
+    float litFrac = mix(0.03, 0.26 + 0.12 * sin(seed), uNight);
     if (h < litFrac) {
       vec3 warm = vec3(1.0, 0.72, 0.42), cool = vec3(0.65, 0.82, 1.0), pink = vec3(1.0, 0.5, 0.8);
       vec3 tint = h2 < 0.6 ? warm : (h2 < 0.9 ? cool : pink);
       // interior variation: blinds / gradient
       float inner = 0.6 + 0.4 * step(0.3, fract(f.x * 3.0 + h * 7.0)) * (0.7 + 0.3 * f.y);
-      emis += tint * tint * inner * (0.2 + 1.1 * uNight) * (0.5 + 0.6 * h2);
+      emis += tint * tint * inner * (0.15 + 3.2 * uNight) * (0.5 + 0.6 * h2);
       refl *= 0.4;
     }
   } else if (mat == ${9}) {
@@ -144,7 +146,7 @@ void main() {
     // patches and cracks
     float patchy = smoothstep(0.62, 0.66, fbm(vWorld.xz * 0.06 + 3.0));
     albedo = mix(albedo, albedo * 0.7, patchy);
-    float crack = smoothstep(0.03, 0.0, abs(fbm(vWorld.xz * 0.25 + 9.0) - 0.5));
+    float crack = (1.0 - smoothstep(0.0, 0.03, abs(fbm(vWorld.xz * 0.25 + 9.0) - 0.5)));
     albedo *= 1.0 - crack * 0.5;
     // tire tracks: darker bands along lanes (based on fract of position)
     spec = 0.15; gloss = 24.0;
@@ -201,7 +203,7 @@ void main() {
 
   float sh = shadowFactor(N);
   float ndl = max(dot(N, uSunDir), 0.0);
-  vec3 hemi = mix(uGroundColor, uSkyColor, N.y * 0.5 + 0.5);
+  vec3 hemi = mix(uGroundColor, uSkyColor, N.y * 0.5 + 0.5) * 0.72;
   // fake AO toward ground for tall surfaces
   float ao = 0.75 + 0.25 * smoothstep(0.0, 3.0, vWorld.y);
   vec3 color = albedo * (hemi * ao + uSunColor * ndl * sh);
@@ -222,7 +224,7 @@ void main() {
     float nl = max(dot(N, L), 0.0) * 0.85 + 0.15 * (lc.w > 0.0 ? 1.0 : 0.0) * max(dot(N, L) + 0.5, 0.0);
     vec3 Hl = normalize(L + V);
     vec3 contrib = lc.rgb * lc.w * att * (albedo * nl + spec * pow(max(dot(N, Hl), 0.0), gloss) * 0.8);
-    color += min(contrib, vec3(2.5));
+    color += min(contrib, vec3(1.2));
   }
 
   // Environment reflection (sky-tinted) with fresnel.
@@ -230,6 +232,7 @@ void main() {
     vec3 R = reflect(-V, N);
     float fres = refl + (1.0 - refl) * pow(1.0 - max(dot(N, V), 0.0), 5.0) * 0.6;
     vec3 env = envColor(R);
+    if (glassMode > 0.5) { vec3 tintG = m == 9 ? vColor * 1.5 : vec3(0.7, 0.8, 0.9); env = mix(uSkyColor * 1.6, env, 0.45) * tintG * (0.75 + 0.5 * hash12(floor(vWorld.xz * 0.2) + vParam)); }
     if (puddle > 0.0) env += uFogColor * 0.3;
     color = mix(color, env, clamp(fres, 0.0, 0.85));
   }
@@ -239,6 +242,9 @@ void main() {
   color += emis;
   color = applyFog(color, vWorld, uCamPos, uSunDir);
   fragColor = vec4(color, uAlpha);
+#ifdef DBG
+  fragColor = vec4(float(m % 4) / 3.0, float((m / 4) % 4) / 3.0, float(m / 16) / 2.0, 1.0) * 0.3;
+#endif
 }`;
 
 export const DEPTH_VS = /* glsl */ `

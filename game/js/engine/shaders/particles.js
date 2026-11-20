@@ -35,9 +35,9 @@ void main() {
   float r = length(vQ);
   float a;
   int type = int(vInfo.x + 0.5);
-  if (type == 1) a = smoothstep(1.0, 0.0, abs(vQ.x)) * smoothstep(1.0, 0.6, abs(vQ.y)); // streak
+  if (type == 1) a = (1.0 - smoothstep(0.0, 1.0, abs(vQ.x))) * (1.0 - smoothstep(0.6, 1.0, abs(vQ.y))); // streak
   else if (type == 2) a = pow(max(1.0 - r, 0.0), 1.5); // glow
-  else a = smoothstep(1.0, 0.3, r) * (0.75 + 0.25 * sin(vQ.x * 4.0 + vInfo.y * 3.0) * sin(vQ.y * 3.0)); // puff
+  else a = (1.0 - smoothstep(0.3, 1.0, r)) * (0.75 + 0.25 * sin(vQ.x * 4.0 + vInfo.y * 3.0) * sin(vQ.y * 3.0)); // puff
   a *= vCol.a;
   if (a < 0.003) discard;
   vec3 c = vCol.rgb;
