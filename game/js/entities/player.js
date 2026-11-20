@@ -103,7 +103,7 @@ export class Player extends Character {
     if (this.state === 'entering') {
       const dx = door[0] - this.x, dz = door[2] - this.z, d = Math.hypot(dx, dz);
       if (this.enterPhase === 0) {
-        if (d > 0.35 && this.enterT < 2.5) {
+        if (d > 0.6 && this.enterT < 1.6) {
           this.move(dt, dx / d * 4.2, dz / d * 4.2, 18); this.faceToward(dx, dz, 14, dt); this.updateAnim(dt, 'run');
           if (v.driver && v.driver !== this && d < 2.5) this.game.vehicles.carjack(v, this);
           return;

@@ -126,7 +126,7 @@ void main() {
     refl *= 1.0 - burnt; spec *= 1.0 - burnt * 0.9;
   }
   else if (m == 3) { albedo = vInstColor.a > 1.5 ? vColor : vExtra.rgb * vColor; rim = 1.0; spec = 0.12; gloss = 20.0; }
-  else if (m == 4) { albedo = vec3(0.03, 0.04, 0.05); spec = 1.0; gloss = 140.0; refl = 0.55; albedo = mix(albedo, vec3(0.02), vExtra.w); }
+  else if (m == 4) { albedo = vec3(0.02, 0.025, 0.03); spec = 1.0; gloss = 140.0; refl = 0.5; glassMode = 2.0; albedo = mix(albedo, vec3(0.02), vExtra.w); }
   else if (m == 5) { albedo = vec3(0.9); emis = vec3(1.0, 0.95, 0.8) * (0.2 + vExtra.z * 7.0) * (1.0 - vExtra.w); }
   else if (m == 6) { albedo = vec3(0.4, 0.02, 0.02); emis = vec3(1.0, 0.06, 0.04) * (0.25 + vExtra.z * 1.6 + vExtra.x * 5.0) * (1.0 - vExtra.w); }
   else if (m == 7) {
@@ -236,7 +236,8 @@ void main() {
     vec3 R = reflect(-V, N);
     float fres = refl + (1.0 - refl) * pow(1.0 - max(dot(N, V), 0.0), 5.0) * 0.6;
     vec3 env = envColor(R);
-    if (glassMode > 0.5) { vec3 tintG = m == 9 ? vColor * 1.5 : vec3(0.7, 0.8, 0.9); env = mix(uSkyColor * 1.6, env, 0.45) * tintG * (0.75 + 0.5 * hash12(floor(vWorld.xz * 0.2) + vParam)); }
+    if (glassMode > 1.5) env *= 0.45;
+    else if (glassMode > 0.5) { vec3 tintG = m == 9 ? vColor * 1.5 : vec3(0.7, 0.8, 0.9); env = mix(uSkyColor * 1.6, env, 0.45) * tintG * (0.75 + 0.5 * hash12(floor(vWorld.xz * 0.2) + vParam)); }
     if (puddle > 0.0) env += uFogColor * 0.3;
     color = mix(color, env, clamp(fres, 0.0, 0.85));
   }

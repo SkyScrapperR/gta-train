@@ -9,6 +9,7 @@ import { CameraRig } from './core/camera-rig.js';
 import { CharacterRenderer } from './entities/character-model.js';
 import { Player } from './entities/player.js';
 import { Inventory } from './combat/weapons.js';
+import { VehicleSystem } from './entities/vehicle.js';
 
 const params = new URLSearchParams(location.search);
 
@@ -41,11 +42,21 @@ class Game {
     this.rig = new CameraRig(this.camera, this.world);
     this.charRenderer = new CharacterRenderer(this.gl);
     this.weapons = new Inventory(this);
+    this.vehicles = new VehicleSystem(this);
     const spawn = (params.get('spawn') || '447,920').split(',').map(Number);
     this.player = new Player(this, spawn[0], spawn[1]);
     this.player.yaw = Math.PI;
     this.characters.push(this.player);
     this.rig.yaw = this.player.yaw;
+    if (params.has('testcars')) {
+      this.vehicles.spawn('merpati', spawn[0] - 3, spawn[1] - 8, Math.PI);
+      this.vehicles.spawn('vesper', spawn[0] + 3, spawn[1] - 8, Math.PI);
+      this.vehicles.spawn('police', spawn[0] - 3, spawn[1] - 16, Math.PI);
+      this.vehicles.spawn('taxi', spawn[0] + 3, spawn[1] - 16, Math.PI);
+      this.vehicles.spawn('bajak', spawn[0] - 3, spawn[1] - 26, Math.PI);
+      this.vehicles.spawn('bison', spawn[0] + 3, spawn[1] - 28, Math.PI);
+      this.vehicles.spawn('kancil', spawn[0] - 3, spawn[1] - 35, Math.PI);
+    }
     this.state = 'playing';
     this.hudCanvas.getContext('2d').clearRect(0, 0, this.hudCanvas.width, this.hudCanvas.height);
     window.__game = this;
@@ -75,6 +86,10 @@ class Game {
     return { origin: [o[0] + d[0] * t0, o[1] + d[1] * t0, o[2] + d[2] * t0], dir: d };
   }
 
+  onPlayerEnteredVehicle(v) { this.rig.snap = false; this.events.emit('enterVehicle', v); }
+  onPlayerExitedVehicle(v) { this.rig.yaw = v ? v.yaw : this.rig.yaw; this.events.emit('exitVehicle', v); }
+  removeCharacter(ch) { const i = this.characters.indexOf(ch); if (i >= 0) this.characters.splice(i, 1); if (ch.vehicle && ch.vehicle.driver === ch) ch.vehicle.driver = null; }
+
   frame(ts) {
     let dt = Math.min(0.05, (ts - this.last) / 1000);
     this.last = ts;
@@ -94,7 +109,10 @@ class Game {
     this.env = computeEnvironment(this.clock, this.rain);
     this.weapons.update(dt);
     this.player.update(dt, this.input, this.rig);
-    this.rig.updateFoot(realDt, this.player, this.mouseFrame, this.player.aiming);
+    this.vehicles.update(dt);
+    for (const ch of this.characters) if (ch !== this.player && ch.vehicle) { const st = ch.vehicle.seatWorld(ch.vehicle.driver === ch ? 0 : 1); ch.x = st[0]; ch.y = st[1]; ch.z = st[2]; ch.yaw = ch.vehicle.yaw; ch.updateAnim(dt, 'sit'); }
+    if (this.player.state === 'driving') this.rig.updateCar(realDt, this.player.vehicle, this.mouseFrame);
+    else this.rig.updateFoot(realDt, this.player, this.mouseFrame, this.player.aiming);
     this.world.update(dt, this.camera.pos, this.env.night);
   }
 
@@ -105,12 +123,14 @@ class Game {
     const env = this.env;
     this.charRenderer.begin();
     for (const ch of this.characters) if (ch.visible) this.charRenderer.add(ch);
+    this.vehicles.render(this.camera.pos);
     const lights = this.frameLights; lights.length = 0;
     this.world.collectLights(lights, this.camera.pos, env.night);
+    this.vehicles.collectLights(lights, this.camera.pos, env.night);
     this.renderer.render({
       camera: this.camera, env, time: this.time, wet: this.rain,
       chunks: this.world.chunks,
-      batches: [...this.world.batches(), ...this.charRenderer.list()],
+      batches: [...this.world.batches(), ...this.charRenderer.list(), ...this.vehicles.list_batches()],
       lights, water: this.world.water,
       post: { exposure: env.exposure, gradeGain: env.gradeGain, gradeLift: env.gradeLift, saturation: env.sat },
       focus: [this.player.x, this.player.y, this.player.z],
